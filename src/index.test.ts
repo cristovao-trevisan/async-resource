@@ -1,3 +1,15 @@
-test('1 + 1', () => {
-  expect(1 + 1).toBe(2)
+import { ResourceManager } from './index'
+
+let resources = new ResourceManager()
+beforeEach(() => {
+  resources = new ResourceManager()
+})
+
+test('resource', async () => {
+  resources.registerResource('user', {
+    source: async () => ({ name: 'Bob  ', surname: 'Sponge' }),
+  })
+
+  await resources.consume('user')
+  await resources.consume('user')
 })

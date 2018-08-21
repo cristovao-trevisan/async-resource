@@ -14,14 +14,26 @@ interface Resource {
   error: String | null
   data: any
 }
+const defaultResource = {
+  loading: false,
+  loaded: false,
+  data: null,
+  error: null,
+}
 type SourceFunctionProps = {
-  /** User given props ... */
+  /** User given props */
   props: any,
-  /** Current resource value ... */
+  /** Current resource value */
   resource: Resource,
 }
 interface Source {
   source: (options: SourceFunctionProps) => Promise<any>
+}
+
+type ConsumeOptions = {
+  /** User given props */
+  props?: any,
+  reload?: Boolean,
 }
 
 export class ResourceManager {
@@ -31,28 +43,27 @@ export class ResourceManager {
 
   registerResource(id: String, options: Source) {
     this.producers.set(id, options)
-    this.resources.set(id, {
-      loading: false,
-      loaded: false,
-      data: null,
-      error: null,
-    })
+    this.resources.set(id, defaultResource)
   }
 
-  async consume(id: String, { props } : { props: any }) {
+  async consume(
+    id: String,
+    { reload = false, props }: ConsumeOptions = {},
+  ) {
     const producer = this.producers.get(id)
     let resource = this.resources.get(id)
+
     if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
+    if (resource.loading) return // already loading
+    if (resource.loaded && !reload) return // already loaded and should not reload
 
     const updateResource = (newResource: any) => {
-      resource = newResource
       this.resources.set(id,  { ...resource, ...newResource })
-      // TODO: cache, call consumer
+      resource = newResource
+      console.log(resource)
+      // TODO: cache, call consumers
     }
 
-    // TODO: reload logic
-    if (resource.loaded) return // already loaded
-    if (resource.loading) return // already loading
     try {
       // set loading
       updateResource({ loading: true })
