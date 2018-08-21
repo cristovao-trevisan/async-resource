@@ -39,20 +39,22 @@ export class ResourceManager {
     })
   }
 
-  async consume(id: String, { props } : { props: any }) {
+  async consume(id: String, props?: any) {
     const producer = this.producers.get(id)
     let resource = this.resources.get(id)
+
     if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
+    if (resource.loaded) return // already loaded
+    if (resource.loading) return // already loading
 
     const updateResource = (newResource: any) => {
-      resource = newResource
       this.resources.set(id,  { ...resource, ...newResource })
-      // TODO: cache, call consumer
+      resource = newResource
+      console.log(resource)
+      // TODO: cache, call consumers
     }
 
     // TODO: reload logic
-    if (resource.loaded) return // already loaded
-    if (resource.loading) return // already loading
     try {
       // set loading
       updateResource({ loading: true })
