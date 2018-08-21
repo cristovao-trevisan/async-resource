@@ -11,5 +11,5 @@ test('resource', async () => {
   })
 
   await resources.consume('user')
-  await resources.consume('user')
+  await resources.consume('user', { reload: true })
 })
