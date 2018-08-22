@@ -1,8 +1,4 @@
-export interface GenericStorage {
-  set: (key: string, value: any) => void
-  get: (key: string) => any | undefined
-  clear: () => void
-}
+import { GenericStorage } from './types'
 
 const hasLocalStorage = () => {
   try {
@@ -19,14 +15,14 @@ export class LocalStorage implements GenericStorage {
     if (!hasLocalStorage()) throw new Error('Local Storage not available')
   }
 
-  set = (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value))
-  get = (key: string) => {
+  set = async (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value))
+  get = async (key: string) => {
     const item = localStorage.getItem(key)
     return item
       ? JSON.parse(item)
       : null
   }
-  clear = () => localStorage.clear()
+  remove = async (key: string) => localStorage.removeItem(key)
 }
 
 export default new LocalStorage()

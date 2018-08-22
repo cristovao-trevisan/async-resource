@@ -1,4 +1,5 @@
-import storage, { GenericStorage } from './storage'
+import storage from './storage'
+import { GenericStorage } from './storage/types'
 
 // interface PaginatedResource {
 //   loading: Boolean
@@ -22,6 +23,9 @@ const defaultResource = {
   data: null,
   error: null,
 }
+interface ResourceCache { resource: Resource, timestamp: number }
+
+
 interface SourceFunctionProps {
   /** User given props */
   props: any,
@@ -52,15 +56,22 @@ export class ResourceManager {
   private consumers: Map<string, Consumer[]> = new Map()
   // private paginatedResources: Map<string, PaginatedResource>
 
-  registerResource(id: string, options: Source) {
+  async registerResource(id: string, options: Source) {
     this.producers.set(id, options)
     this.resources.set(id, defaultResource)
 
+    const updateResource = (data: ResourceCache) => {
+      const { resource, timestamp } = data
+      const passedTime = Date.now() - timestamp
+      if (options.cache!.TTL && passedTime > options.cache!.TTL!) return
+      // FIXME: do not overwrite correct data
+      this.resources.set(id, resource)
+    }
+
     if (options.cache) {
       const store = options.cache.storage || storage
-      const { resource, timestamp } = store.get(id)
-      console.log(timestamp)
-      this.resources.set(id, resource)
+      const data = await store.get(id)
+      if (data) updateResource(data)
     }
   }
 
@@ -97,6 +108,7 @@ export class ResourceManager {
       if (success && producer.cache) {
         const store = producer.cache.storage || storage
         store.set(id, { resource, timestamp: Date.now() })
+        // TODO: TTL logic
       }
     }
 
