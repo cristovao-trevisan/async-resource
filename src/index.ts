@@ -73,11 +73,7 @@ export class ResourceManager {
       const store = producer.cache.storage || storage
       store.set(id, { resource, timestamp: Date.now() })
       // set TTL callback
-<<<<<<< HEAD
       if (producer.cache.TTL) setTimeout(() => this.consume(id), producer.cache.TTL)
-=======
-      setTimeout(() => this.consume(id), producer.cache.TTL)
->>>>>>> 975202fa1a2f0ee1b04ac3a69737bf5749877209
     }
   }
 
