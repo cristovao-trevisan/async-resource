@@ -12,19 +12,21 @@ import { GenericStorage } from './storage/types'
 // }
 
 interface Resource {
-  loading: Boolean
-  loaded: Boolean
+  /** True if data was retrieved from cache  */
+  cache: boolean
+  loading: boolean
+  loaded: boolean
   error: string | null
   data: any
 }
 const defaultResource = {
+  cache: false,
   loading: false,
   loaded: false,
   data: null,
   error: null,
 }
 interface ResourceCache { resource: Resource, timestamp: number }
-
 
 interface SourceFunctionProps {
   /** User given props */
@@ -54,24 +56,47 @@ export class ResourceManager {
   private resources: Map<string, Resource> = new Map()
   private producers: Map<string, Source> = new Map()
   private consumers: Map<string, Consumer[]> = new Map()
+  private requests: Map<string, ConsumeOptions> = new Map()
   // private paginatedResources: Map<string, PaginatedResource>
+
+  private updateResource(id: string, resource: Resource) {
+    // don't write cache over requested data
+    if (this.resources.get(id)!.loaded && resource.cache) return
+    // update the state
+    this.resources.set(id, resource)
+    // consume data
+    const consumers = this.consumers.get(id)
+    if (consumers) consumers.forEach(consume => consume(resource))
+    // cache result (if any)
+    const producer = this.producers.get(id)!
+    if (!resource.cache && resource.loaded && producer.cache) {
+      const store = producer.cache.storage || storage
+      store.set(id, { resource, timestamp: Date.now() })
+      // set TTL callback
+      setTimeout(() => this.consume(id), producer.cache.TTL)
+    }
+  }
 
   async registerResource(id: string, options: Source) {
     this.producers.set(id, options)
     this.resources.set(id, defaultResource)
 
-    const updateResource = (data: ResourceCache) => {
-      const { resource, timestamp } = data
-      const passedTime = Date.now() - timestamp
-      if (options.cache!.TTL && passedTime > options.cache!.TTL!) return
-      // FIXME: do not overwrite correct data
-      this.resources.set(id, resource)
-    }
-
     if (options.cache) {
       const store = options.cache.storage || storage
       const data = await store.get(id)
-      if (data) updateResource(data)
+      // ttl logic
+      const consumeOptions = this.requests.get(id)
+      if (data) {
+        const { resource, timestamp } : ResourceCache = data
+        const passedTime = Date.now() - timestamp
+        if (!options.cache.TTL || passedTime > options.cache!.TTL!) {
+          this.updateResource(id, { ...resource, cache: true })
+          return
+        }
+      }
+      // defaults to invalid cache
+      // (which requests the data if consume was called)
+      if (consumeOptions) this.consume(id, consumeOptions)
     }
   }
 
@@ -89,39 +114,31 @@ export class ResourceManager {
 
   async consume(
     id: string,
-    { reload = false, props }: ConsumeOptions = {},
+    consumeOptions: ConsumeOptions = {},
   ) {
-    const producer = this.producers.get(id)!
+    // set as requested
+    this.requests.set(id, consumeOptions)
+    // read data
+    const { reload = false, props } = consumeOptions
+    const producer = this.producers.get(id)
     let resource = this.resources.get(id)!
 
+    // test request conditions
     if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
     if (resource.loading) return // already loading
     if (resource.loaded && !reload) return // already loaded and should not reload
 
-    const updateResource = (newResource: any, success = false) => {
-      this.resources.set(id,  { ...resource, ...newResource })
-      resource = newResource
-      // consume data
-      const consumers = this.consumers.get(id)
-      if (consumers) consumers.forEach(consume => consume(resource))
-      // cache result (if any)
-      if (success && producer.cache) {
-        const store = producer.cache.storage || storage
-        store.set(id, { resource, timestamp: Date.now() })
-        // TODO: TTL logic
-      }
-    }
-
     try {
       // set loading
-      updateResource({ loading: true })
+      resource = { ...resource, loading: true }
+      this.updateResource(id, resource)
       // request resource
       const data = await producer.source({ props, resource })
       // got it
-      updateResource({ data, loading: false, loaded: true, error: null }, true)
+      this.updateResource(id, { data, loading: false, loaded: true, error: null, cache: false })
     } catch (e) {
       // failed, set error
-      updateResource({ loading: false, loaded: false, data: null, error: e.message })
+      this.updateResource(id, { loading: false, loaded: false, data: null, error: e.message, cache: false })
     }
   }
 }

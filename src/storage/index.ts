@@ -9,20 +9,28 @@ const hasLocalStorage = () => {
     return false
   }
 }
+const available = hasLocalStorage()
+class LocalStorage implements GenericStorage {
+  isAvailable = () => available
 
-export class LocalStorage implements GenericStorage {
-  constructor() {
-    if (!hasLocalStorage()) throw new Error('Local Storage not available')
+  set = async (key: string, value: any) => {
+    if (available) localStorage.setItem(key, JSON.stringify(value))
   }
 
-  set = async (key: string, value: any) => localStorage.setItem(key, JSON.stringify(value))
   get = async (key: string) => {
+    if (!available) return null
     const item = localStorage.getItem(key)
     return item
       ? JSON.parse(item)
       : null
   }
-  remove = async (key: string) => localStorage.removeItem(key)
+  remove = async (key: string) => {
+    if (available) localStorage.removeItem(key)
+  }
+
+  clear = async () => {
+    if (available) localStorage.clear()
+  }
 }
 
 export default new LocalStorage()

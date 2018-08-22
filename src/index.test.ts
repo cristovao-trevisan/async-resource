@@ -1,8 +1,10 @@
 import { ResourceManager } from './index'
+import storage from './storage'
 
 let resources = new ResourceManager()
 beforeEach(() => {
   resources = new ResourceManager()
+  storage.clear()
 })
 
 test('resource', async () => {
