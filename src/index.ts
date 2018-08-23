@@ -19,14 +19,14 @@ interface Resource {
   error: string | null
   data: any
 }
-const defaultResource = {
+export const defaultResource = {
   cache: false,
   loading: false,
   loaded: false,
   data: null,
   error: null,
 }
-interface ResourceCache { resource: Resource, timestamp: number }
+interface ResourceCache { data: any, timestamp: number }
 
 interface SourceFunctionProps {
   /** User given props */
@@ -36,10 +36,11 @@ interface SourceFunctionProps {
 }
 interface Source {
   source: (options: SourceFunctionProps) => Promise<any>,
+  /** Set for caching */
   cache?: {
-    /** defaults to LocalStorage */
+    /** Defaults to LocalStorage */
     storage?: GenericStorage,
-    /** TODO: maximum data duration */
+    /** Maximum data duration */
     TTL?: Number,
   },
 }
@@ -71,7 +72,7 @@ export class ResourceManager {
     const producer = this.producers.get(id)!
     if (!resource.cache && resource.loaded && producer.cache) {
       const store = producer.cache.storage || storage
-      store.set(id, { resource, timestamp: Date.now() })
+      store.set(`resource-${id}`, { resource, timestamp: Date.now() })
       // set TTL callback
       if (producer.cache.TTL) setTimeout(() => this.consume(id), producer.cache.TTL)
     }
@@ -83,14 +84,14 @@ export class ResourceManager {
 
     if (options.cache) {
       const store = options.cache.storage || storage
-      const data = await store.get(id)
+      const storageItem = await store.get(`resource-${id}`)
       // ttl logic
       const consumeOptions = this.requests.get(id)
-      if (data) {
-        const { resource, timestamp } : ResourceCache = data
+      if (storageItem) {
+        const { data, timestamp } : ResourceCache = storageItem
         const passedTime = Date.now() - timestamp
         if (!options.cache.TTL || passedTime > options.cache!.TTL!) {
-          this.updateResource(id, { ...resource, cache: true })
+          this.updateResource(id, { ...defaultResource, data, loaded: true, cache: true })
           return
         }
       }
@@ -100,13 +101,13 @@ export class ResourceManager {
     }
   }
 
-  registerConsumer(id: string, consumer: Consumer) {
+  subscribe(id: string, consumer: Consumer) {
     const consumers = this.consumers.get(id) || []
     consumers.push(consumer)
     this.consumers.set(id, consumers)
   }
 
-  unregisterConsumer(id: string, consumer: Consumer) {
+  unsubscribe(id: string, consumer: Consumer) {
     const consumers = (this.consumers.get(id) || [])
       .filter(item => item !== consumer)
     this.consumers.set(id, consumers)
@@ -141,6 +142,8 @@ export class ResourceManager {
       this.updateResource(id, { loading: false, loaded: false, data: null, error: e.message, cache: false })
     }
   }
+
+  get(id: string) { return this.resources.get(id) }
 }
 
 export default new ResourceManager()

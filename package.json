@@ -5,6 +5,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
+    "pretest": "tslint --project tsconfig.json",
+    "test": "jest --verbose --silent",
     "build": "tsc"
   },
   "keywords": [],
