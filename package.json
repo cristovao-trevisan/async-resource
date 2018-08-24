@@ -7,7 +7,7 @@
   "scripts": {
     "pretest": "tslint --project tsconfig.json",
     "test": "jest --verbose --silent",
-    "build": "tsc"
+    "build": "rm -rf dist && tsc"
   },
   "keywords": [],
   "author": "",

@@ -11,6 +11,10 @@
 
     /* Strict Type-Checking Options */
     "strict": true,
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }
