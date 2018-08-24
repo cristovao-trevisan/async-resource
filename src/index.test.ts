@@ -1,9 +1,9 @@
-import { ResourceManager, defaultResource } from './index'
+import * as resources from './index'
 import storage from './storage'
 
-let resources = new ResourceManager()
+const { defaultResource } = resources
 beforeEach(() => {
-  resources = new ResourceManager()
+  resources.clear()
   storage.clear()
 })
 
