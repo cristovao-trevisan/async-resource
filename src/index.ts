@@ -74,7 +74,7 @@ export class ResourceManager {
       const store = producer.cache.storage || storage
       store.set(`resource-${id}`, { resource, timestamp: Date.now() })
       // set TTL callback
-      if (producer.cache.TTL) setTimeout(() => this.consume(id), producer.cache.TTL)
+      if (producer.cache.TTL) setTimeout(() => this.consume(id, { reload: true }), producer.cache.TTL)
     }
   }
 
@@ -84,11 +84,11 @@ export class ResourceManager {
 
     if (options.cache) {
       const store = options.cache.storage || storage
-      const storageItem = await store.get(`resource-${id}`)
-      // ttl logic
+      const storageItem: ResourceCache = await store.get(`resource-${id}`)
       const consumeOptions = this.requests.get(id)
+      // cache logic
       if (storageItem) {
-        const { data, timestamp } : ResourceCache = storageItem
+        const { data, timestamp } = storageItem
         const passedTime = Date.now() - timestamp
         if (!options.cache.TTL || passedTime > options.cache!.TTL!) {
           this.updateResource(id, { ...defaultResource, data, loaded: true, cache: true })
@@ -105,6 +105,8 @@ export class ResourceManager {
     const consumers = this.consumers.get(id) || []
     consumers.push(consumer)
     this.consumers.set(id, consumers)
+    const resource = this.resources.get(id)
+    if (resource) consumer(resource)
   }
 
   unsubscribe(id: string, consumer: Consumer) {
