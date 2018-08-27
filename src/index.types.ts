@@ -1,22 +1,22 @@
 import { GenericStorage } from './storage/types'
 
 // export interface PaginatedResource {
-//   loading: Boolean
-//   loaded: Boolean
-//   length: Number
-//   offset: Number
-//   full: Boolean
-//   errors: string[]
-//   data: Map<Number, any> // index -> data
+//   readonly loading: Boolean
+//   readonly loaded: Boolean
+//   readonly length: Number
+//   readonly offset: Number
+//   readonly full: Boolean
+//   readonly errors: string[]
+//   readonly data: Map<Number, any> // index -> data
 // }
 
 export interface Resource {
   /** True if data was retrieved from cache  */
-  cache: boolean
-  loading: boolean
-  loaded: boolean
-  error: string | null
-  data: any
+  readonly cache: boolean
+  readonly loading: boolean
+  readonly loaded: boolean
+  readonly error: string | null
+  readonly data: any
 }
 
 export interface ResourceCache { data: Resource, timestamp: number }
@@ -27,8 +27,8 @@ export interface SourceFunctionProps {
   /** Current resource value */
   resource: Resource,
 }
-export interface Source {
-  source: (options: SourceFunctionProps) => Promise<any>,
+
+export interface SourceOptions {
   /** Set for caching */
   cache?: {
     /** Defaults to LocalStorage */
@@ -37,6 +37,21 @@ export interface Source {
     TTL?: Number,
   },
 }
+
+export interface Source extends SourceOptions {
+  source: (options: SourceFunctionProps) => Promise<any>,
+}
+
+// export interface PaginatedSourceFunctionProps {
+//   /** User given props */
+//   props: any,
+//   /** Current resource value */
+//   resource: PaginatedResource,
+// }
+
+// export interface PaginatedSource extends SourceOptions {
+//   source: (options: PaginatedSourceFunctionProps) => Promise<any>,
+// }
 
 export interface ConsumeOptions {
   /** User given props */

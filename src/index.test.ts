@@ -51,7 +51,9 @@ test('should read cache', async () => {
     cache: {},
   })
 
-  expect(consumer.mock.calls[0][0])
+  expect(consumer.mock.calls.length).toBe(2)
+  expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
+  expect(consumer.mock.calls[1][0])
     .toEqual({ ...defaultResource, loaded: true, cache: true, data: user })
 })
 
@@ -92,28 +94,39 @@ test('should work for multiple consumers, with unsubscribe and reload', async ()
   expect(consumer3.mock.calls.length).toBe(3)
 })
 
-test('cache should not overwrite requested data', async (done) => {
+test('should try to read cache, and call resource when it fails', async (done) => {
   const get = storage.get
-  const store = { data: { name: 'wrong' }, timestamp: Date.now() }
   const consumer = jest.fn()
+  const source = jest.fn(async () => user)
 
-  storage.get = () => new Promise(resolve => setTimeout(
-    () => {
-      resolve(store)
-      // get should be called, but no resource update should be triggered
-      expect(consumer.mock.calls.length).toBe(3)
-      done()
-    },
-    10))
+  storage.get = () => null
 
   resources.registerResource('user', {
-    source: async () => user,
+    source,
     cache: {},
   })
   resources.subscribe('user', consumer)
 
   await resources.consume('user')
-  expect(consumer.mock.calls.length).toBe(3)
+
+  // await cache failure
+  setTimeout(
+    () => {
+      // reading cache
+      expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
+      // nothing found
+      expect(consumer.mock.calls[1][0]).toEqual(defaultResource)
+      // call source
+      expect(source.mock.calls.length).toBe(1)
+      expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
+      // loaded
+      expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+
+      expect(consumer.mock.calls.length).toBe(4)
+
+      done()
+    },
+    1)
 
   storage.get = get
 })
@@ -131,23 +144,30 @@ test('cache TTL should work', async (done) => {
   // max duration of 5 milliseconds
   resources.registerResource('user', {
     source,
-    cache: {
-      TTL: 5,
-    },
+    cache: { TTL: 3 },
   })
   const consumer = jest.fn()
   resources.subscribe('user', consumer)
 
   await resources.consume('user')
-  expect(consumer.mock.calls.length).toBe(3)
 
   setTimeout(
     () => {
       // consume should be called after TTL (5ms),
       // so after 9ms the consumer is called again (loading and loaded)
-      expect(consumer.mock.calls.length).toBe(5)
+      expect(source.mock.calls.length).toBe(2)
+      expect(consumer.mock.calls.length).toBe(6)
+      // try loading cache
+      expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
+      expect(consumer.mock.calls[1][0]).toEqual(defaultResource)
+      // call source
+      expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
+      expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+      // call source after TTL
+      expect(consumer.mock.calls[4][0]).toEqual({ ...defaultResource, loading: true, loaded: true, data: user })
+      expect(consumer.mock.calls[5][0]).toEqual({ ...defaultResource, loaded: true, data: user })
       done()
     },
-    9,
+    5,
   )
 })

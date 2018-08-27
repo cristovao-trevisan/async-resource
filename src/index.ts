@@ -5,6 +5,9 @@ import {
   ConsumeOptions,
   Consumer,
   ResourceCache,
+  SourceOptions,
+  // PaginatedSource,
+  // PaginatedResource,
 } from './index.types'
 
 export const defaultResource = {
@@ -19,7 +22,7 @@ const resources: Map<string, Resource> = new Map()
 const producers: Map<string, Source> = new Map()
 const consumersMap: Map<string, Consumer[]> = new Map()
 const requests: Map<string, ConsumeOptions> = new Map()
-// const paginatedResources: Map<string, PaginatedResource>
+// const paginatedResources: Map<string, PaginatedResource> = new Map()
 
 const updateResource = (id: string, resource: Resource) => {
   // don't write cache over requested data
@@ -35,8 +38,37 @@ const updateResource = (id: string, resource: Resource) => {
     const store = producer.cache.storage || storage
     store.set(`resource-${id}`, { resource, timestamp: Date.now() })
     // set TTL callback
-    if (producer.cache.TTL) setTimeout(() => consume(id, { reload: true }), producer.cache.TTL)
+    if (producer.cache.TTL) {
+      setTimeout(
+        () => {
+          const options = requests.get(id) || {}
+          consume(id, { ...options, reload: true })
+        },
+        producer.cache.TTL)
+    }
   }
+}
+
+/**
+ * Try to read cache and update resource,
+ * return true if data was found and set
+ */
+const readCache = async (id: string, options: SourceOptions) => {
+  updateResource(id, { ...defaultResource, loading: true, cache: true })
+  const cache = options.cache!
+  const store = cache.storage || storage
+  const storageItem: ResourceCache = await store.get(`resource-${id}`)
+  // cache logic
+  if (storageItem) {
+    const { data, timestamp } = storageItem
+    const passedTime = Date.now() - timestamp
+    if (!cache.TTL || passedTime > options.cache!.TTL!) {
+      updateResource(id, { ...defaultResource, data, loaded: true, cache: true })
+      return true
+    }
+  }
+  updateResource(id, defaultResource)
+  return false
 }
 
 export const registerResource = async (id: string, options: Source) => {
@@ -44,23 +76,16 @@ export const registerResource = async (id: string, options: Source) => {
   resources.set(id, defaultResource)
 
   if (options.cache) {
-    const store = options.cache.storage || storage
-    const storageItem: ResourceCache = await store.get(`resource-${id}`)
+    const cacheHit = await readCache(id, options)
     const consumeOptions = requests.get(id)
-    // cache logic
-    if (storageItem) {
-      const { data, timestamp } = storageItem
-      const passedTime = Date.now() - timestamp
-      if (!options.cache.TTL || passedTime > options.cache!.TTL!) {
-        updateResource(id, { ...defaultResource, data, loaded: true, cache: true })
-        return
-      }
-    }
     // defaults to invalid cache
     // (which requests the data if consume was called)
-    if (consumeOptions) consume(id, consumeOptions)
+    if (!cacheHit && consumeOptions) await consume(id, consumeOptions)
   }
 }
+
+// export const registerPaginatedResource = async (id: string, options: PaginatedSource) => {
+// }
 
 export const subscribe = (id: string, consumer: Consumer) => {
   const consumers = consumersMap.get(id) || []
