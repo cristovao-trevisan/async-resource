@@ -1,33 +1,30 @@
 {
-  "name": "async-resource",
-  "version": "1.0.0",
+  "name": "@async-resource/vuex",
+  "version": "0.0.1",
   "description": "",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "pretest": "tslint --project tsconfig.json",
-    "test": "jest --verbose --silent",
+    "test": "jest --verbose --silent --coverage",
     "build": "rm -rf dist && tsc"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@async-resource/core": "^0.0.2",
     "@types/jest": "^23.3.1",
-    "@types/react": "^16.4.12",
-    "@types/react-native": "^0.56.10",
     "jest": "^23.5.0",
     "ts-jest": "^23.1.4",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.10.0",
-    "typescript": "^3.0.1"
-  },
-  "dependencies": {
-    "@types/react-redux": "^6.0.6",
-    "react-redux": "^5.0.7",
-    "redux": "^4.0.0",
-    "redux-dynamic-reducer": "^2.0.2",
+    "typescript": "^3.0.1",
     "vue": "^2.5.17",
+    "vuex": "^3.0.1"
+  },
+  "peerDependencies": {
+    "@async-resource/core": "^0.0.2",
     "vuex": "^3.0.1"
   }
 }

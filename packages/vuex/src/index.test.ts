@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex, { Store } from 'vuex'
 import connectResource from './index'
-import { defaultResource, consume } from '../index'
+import { defaultResource, consume } from '@async-resource/core'
 
 Vue.use(Vuex)
 

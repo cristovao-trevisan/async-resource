@@ -11,7 +11,7 @@ import connectResource, {
 import {
   defaultResource,
   consume,
-} from '../index'
+} from '@async-resource/core'
 
 let store: Store<any> = createDynamicStore()
 let { registerResource: registerDynamicResource } = connectResource(store)

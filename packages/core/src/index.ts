@@ -10,6 +10,8 @@ import {
   // PaginatedResource,
 } from './index.types'
 
+export * from './index.types'
+
 export const defaultResource = {
   cache: false,
   loading: false,

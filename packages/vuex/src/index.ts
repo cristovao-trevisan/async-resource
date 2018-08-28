@@ -5,12 +5,10 @@ import {
   consume,
   subscribe,
   registerResource,
-} from '../index'
-import {
   ConsumeOptions,
   Resource,
   Source,
-} from '../index.types'
+} from '@async-resource/core'
 
 export default (store: Store<{}>) => ({
   registerResource(id: string, options: Source) {

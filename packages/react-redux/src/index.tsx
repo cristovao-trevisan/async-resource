@@ -1,18 +1,18 @@
 import { Component } from 'react'
 import { connect } from 'react-redux'
+import PropTypes from 'prop-types'
 import {
   Resource as ResourceType,
   ConsumeOptions,
-} from '../index.types'
-import PropTypes from 'prop-types'
-import { reducerKey } from '../redux'
-import { consume } from '..'
+  consume,
+} from '@async-resource/core'
+import { reducerKey } from '@async-resource/redux'
 
 interface Props {
   id: string
-  render(resource: ResourceType): Component
+  render(resource: ResourceType): Component | JSX.Element
   resource: any
-  options: ConsumeOptions | null
+  options?: ConsumeOptions | null
 }
 
 class Resource extends Component<Props> {

@@ -1,0 +1,31 @@
+{
+  "name": "@async-resource/redux",
+  "version": "0.0.3",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "pretest": "tslint --project tsconfig.json",
+    "test": "jest --verbose --silent --coverage",
+    "build": "rm -rf dist && tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@async-resource/core": "^0.0.2",
+    "@types/jest": "^23.3.1",
+    "@types/react-redux": "^6.0.6",
+    "jest": "^23.5.0",
+    "redux": "^4.0.0",
+    "redux-dynamic-reducer": "^2.0.2",
+    "ts-jest": "^23.1.4",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.10.0",
+    "typescript": "^3.0.1"
+  },
+  "peerDependencies": {
+    "@async-resource/core": "^0.0.2",
+    "redux": "^4.0.0"
+  }
+}

@@ -9,13 +9,11 @@ import {
   Source,
   Resource,
   ConsumeOptions,
-} from '../index.types'
-import {
   registerResource as register,
   consume as callConsume,
   subscribe,
   defaultResource,
-} from '../index'
+} from '@async-resource/core'
 
 export const updateKey = (id: string) => `update-resource-${id}`
 export const consumeKey = (id: string) => `consume-resource-${id}`
