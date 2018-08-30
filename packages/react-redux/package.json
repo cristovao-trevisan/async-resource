@@ -1,17 +1,25 @@
 {
   "name": "@async-resource/react-redux",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.0.2",
+  "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "pretest": "tslint --project tsconfig.json",
     "test": "jest --verbose --silent --coverage",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "prepublish": "yarn build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "resource",
+    "manager",
+    "react",
+    "redux",
+    "http",
+    "async"
+  ],
+  "author": "Cristóvão Trevisan",
+  "license": "MIT",
   "devDependencies": {
     "@async-resource/core": "^0.0.2",
     "@async-resource/redux": "^0.0.3",
