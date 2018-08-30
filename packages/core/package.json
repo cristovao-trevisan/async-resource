@@ -1,17 +1,27 @@
 {
   "name": "@async-resource/core",
-  "version": "0.0.2",
-  "description": "",
+  "version": "0.0.4",
+  "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "pretest": "tslint --project tsconfig.json",
     "test": "jest --verbose --silent --coverage",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "prepublish": "yarn build"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "resource",
+    "manager",
+    "react",
+    "vue",
+    "redux",
+    "vuex",
+    "http",
+    "async"
+  ],
+  "author": "Cristóvão Trevisan",
+  "license": "MIT",
   "devDependencies": {
     "@types/jest": "^23.3.1",
     "@types/react-native": "^0.56.10",
