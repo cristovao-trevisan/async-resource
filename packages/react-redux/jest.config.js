@@ -3,7 +3,7 @@ module.exports = {
     '^.+\\.tsx?$': 'ts-jest'
   },
   testRegex: '(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$',
-  moduleFileExtensions: ['ts', 'js'],
+  moduleFileExtensions: ['tsx', 'ts', 'js', 'jsx'],
   modulePathIgnorePatterns: [
     '/node_modules/',
     '/dist/',

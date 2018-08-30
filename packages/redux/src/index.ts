@@ -3,7 +3,6 @@ import {
   Reducer,
   AnyAction,
 } from 'redux'
-import 'redux-dynamic-reducer'
 
 import {
   Source,
@@ -23,7 +22,14 @@ export const consumeAction = (id: string, props?: ConsumeOptions) => ({ props, t
 
 type ResourceReducer = Reducer<Resource, AnyAction>
 
-export default (store: Store) => ({
+interface NestableReducersMapObject {
+  [key: string]: (NestableReducersMapObject | Reducer<any>)
+}
+interface DynamicStore extends Store {
+  attachReducers(reducers: NestableReducersMapObject): void
+}
+
+export default (store: DynamicStore) => ({
   registerResource: (id: string, options: Source) => {
     // actions
     const update = updateKey(id)

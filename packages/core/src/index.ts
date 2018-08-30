@@ -12,7 +12,7 @@ import {
 
 export * from './index.types'
 
-export const defaultResource = {
+export const defaultResource: Resource = {
   cache: false,
   loading: false,
   loaded: false,
@@ -89,12 +89,15 @@ export const registerResource = async (id: string, options: Source) => {
 // export const registerPaginatedResource = async (id: string, options: PaginatedSource) => {
 // }
 
+/** Returns an unsubscribe function */
 export const subscribe = (id: string, consumer: Consumer) => {
   const consumers = consumersMap.get(id) || []
   consumers.push(consumer)
   consumersMap.set(id, consumers)
   const resource = resources.get(id)
   if (resource) consumer(resource)
+
+  return () => unsubscribe(id, consumer)
 }
 
 export const unsubscribe = (id: string, consumer: Consumer) => {
