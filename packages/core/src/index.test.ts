@@ -171,3 +171,65 @@ test('cache TTL should work', async (done) => {
     5,
   )
 })
+
+describe('#update', () => {
+  test('should work', async () => {
+    const update = jest.fn(async ({ props, resource: { data } }) => ({ ...data, ...props }))
+    resources.registerResource('user', {
+      update,
+      source: async () => user,
+    })
+
+    const consumer = jest.fn()
+    resources.subscribe('user', consumer)
+
+    expect(consumer.mock.calls.length).toBe(1)
+    expect(consumer.mock.calls[0][0]).toEqual(defaultResource)
+
+    await resources.consume('user')
+    // loading
+    expect(consumer.mock.calls[1][0]).toEqual({ ...defaultResource, loading: true })
+    // data
+    expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+
+    await resources.update('user', { name: 'John' })
+    expect(update.mock.calls[0][0]).toMatchObject({ props: { name: 'John' } })
+    // loading
+    expect(consumer.mock.calls[3][0]).toEqual({
+      ...defaultResource,
+      loaded: true,
+      updating: true,
+      data: user,
+    })
+    // data
+    expect(consumer.mock.calls[4][0]).toEqual({
+      ...defaultResource,
+      loaded: true,
+      data: { name: 'John', surname: 'Sponge' },
+    })
+  })
+
+  test('with error', async () => {
+    resources.registerResource('user', {
+      source: async () => user,
+      update: async () => { throw new Error('Could not update') },
+    })
+
+    const consumer = jest.fn()
+    resources.subscribe('user', consumer)
+
+    await resources.consume('user')
+    await resources.update('user', { name: 'John' }).catch(() => null)
+    const loaded = { ...defaultResource, loaded: true, data: user }
+    expect(consumer.mock.calls[2][0]).toEqual(loaded)
+    // loading
+    expect(consumer.mock.calls[3][0]).toEqual({
+      ...defaultResource,
+      loaded: true,
+      updating: true,
+      data: user,
+    })
+    // return to loaded state
+    expect(consumer.mock.calls[4][0]).toEqual(loaded)
+  })
+})

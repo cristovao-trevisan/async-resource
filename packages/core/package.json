@@ -1,6 +1,6 @@
 {
   "name": "@async-resource/core",
-  "version": "0.0.5",
+  "version": "0.0.8",
   "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,7 @@
     "pretest": "tslint --project tsconfig.json",
     "test": "jest --verbose --silent --coverage",
     "build": "rm -rf dist && tsc",
-    "prepublish": "yarn build"
+    "prepublish": "yarn test && yarn build"
   },
   "keywords": [
     "resource",

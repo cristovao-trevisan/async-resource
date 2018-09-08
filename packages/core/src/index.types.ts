@@ -14,6 +14,7 @@ export interface Resource {
   /** True if data was retrieved from cache  */
   readonly cache: boolean
   readonly loading: boolean
+  readonly updating: boolean
   readonly loaded: boolean
   readonly error: string | null
   readonly data: any
@@ -40,6 +41,7 @@ export interface SourceOptions {
 
 export interface Source extends SourceOptions {
   source: (options: SourceFunctionProps) => Promise<any>,
+  update?: (options: SourceFunctionProps) => Promise<any>
 }
 
 // export interface PaginatedSourceFunctionProps {

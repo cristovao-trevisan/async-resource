@@ -15,6 +15,7 @@ export * from './index.types'
 export const defaultResource: Resource = {
   cache: false,
   loading: false,
+  updating: false,
   loaded: false,
   data: null,
   error: null,
@@ -115,7 +116,7 @@ export const consume = async (
   // read data
   const { reload = false, props } = consumeOptions
   const producer = producers.get(id)
-  let resource = resources.get(id)!
+  const resource = resources.get(id)!
 
   // test request conditions
   if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
@@ -124,15 +125,41 @@ export const consume = async (
 
   try {
     // set loading
-    resource = { ...resource, loading: true }
-    updateResource(id, resource)
+    updateResource(id, { ...resource, loading: true })
     // request resource
     const data = await producer.source({ props, resource })
     // got it
-    updateResource(id, { data, loading: false, loaded: true, error: null, cache: false })
+    updateResource(id, { ...defaultResource, data, loaded: true, updating: false })
   } catch (e) {
     // failed, set error
-    updateResource(id, { loading: false, loaded: false, data: null, error: e.message, cache: false })
+    updateResource(id, { ...defaultResource, error: e.message })
+  }
+}
+
+export const update = async (
+  id: string,
+  props: any,
+) => {
+  // read data
+  const producer = producers.get(id)
+  const resource = resources.get(id)
+
+  // test request conditions
+  if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
+  if (!producer.update) throw new Error(`Update not registered for resource: ${id}`)
+  if (resource.updating) return // already updating
+
+  // set as updating
+  updateResource(id, { ...resource, updating: true })
+  try {
+    // try to update
+    const data = await producer.update({ resource, props })
+    // got it
+    updateResource(id, { ...resource, data, updating: false })
+  } catch (err) {
+    // ops, return to original state and throw
+    updateResource(id, resource)
+    throw err
   }
 }
 
