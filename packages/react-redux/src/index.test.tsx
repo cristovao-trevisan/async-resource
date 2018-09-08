@@ -10,14 +10,16 @@ import {
   registerResource,
 } from '@async-resource/redux'
 
-import { Resource, withResource } from './index'
+import { Resource, Resources, withResource } from './index'
 
 let store: Store
 const user = { name: 'Bob' }
+const team = 'Sea'
 
 beforeEach(() => {
   clear()
   registerResource('user', { source: async () => user })
+  registerResource('team', { source: async () => team })
   registerResource('error', { source: async () => { throw new Error('An Error') } })
   store = createStore(combineReducers(reducers))
   applyResourceToStore(store)
@@ -65,12 +67,13 @@ describe('HOC', () => {
     )
 
     let first = true
-    store.subscribe(() => {
+    const unsubscribe = store.subscribe(() => {
       if (first) {
         expect(rendered.toJSON()!.children).toEqual(['Loading'])
         first = false
       } else {
         expect(rendered.toJSON()!.children).toEqual(['Bob'])
+        unsubscribe()
         done()
       }
     })
@@ -91,14 +94,102 @@ describe('HOC', () => {
     )
 
     let first = true
-    store.subscribe(() => {
+    const unsubscribe = store.subscribe(() => {
       if (first) {
         expect(rendered.toJSON()!.children).toEqual(['Loading'])
         first = false
       } else {
         expect(rendered.toJSON()!.children).toEqual(['An Error'])
+        unsubscribe()
         done()
       }
     })
+  })
+})
+
+describe('render props with multiple resources', () => {
+  test('should work', (done) => {
+    let count = 0
+    ReactTestRenderer.create(
+      <Provider store={store}>
+        <Resources ids={['user', 'team']} render={(resources, all) => {
+          count += 1
+          expect(all.error).toBeNull() // no error in this test
+          switch (count) {
+            case 2: // loading first resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(resources.user).toEqual({ ...defaultResource, loading: true })
+              expect(resources.team).toEqual(defaultResource)
+              break
+            case 3: // loading second resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(resources.user).toEqual({ ...defaultResource, loading: true })
+              expect(resources.team).toEqual({ ...defaultResource, loading: true })
+              break
+            case 4: // loaded first resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(resources.user).toEqual({ ...defaultResource, loaded: true, data: user })
+              expect(resources.team).toEqual({ ...defaultResource, loading: true })
+              break
+            case 5: // loaded second resource
+              expect(all.loading).toBe(false)
+              expect(all.loaded).toBe(true)
+              expect(resources.user).toEqual({ ...defaultResource, loaded: true, data: user })
+              expect(resources.team).toEqual({ ...defaultResource, loaded: true, data: team })
+              done()
+              break
+          }
+          return <div> Testing </div>
+        }}
+      />
+      </Provider>,
+    )
+  })
+
+  test('should correctly accumulate error', (done) => {
+    let count = 0
+    ReactTestRenderer.create(
+      <Provider store={store}>
+        <Resources ids={['user', 'error']} render={(resources, all) => {
+          count += 1
+          switch (count) {
+            case 2: // loading first resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(all.error).toBeNull()
+              expect(resources.user).toEqual({ ...defaultResource, loading: true })
+              expect(resources.error).toEqual(defaultResource)
+              break
+            case 3: // loading second resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(all.error).toBeNull()
+              expect(resources.user).toEqual({ ...defaultResource, loading: true })
+              expect(resources.error).toEqual({ ...defaultResource, loading: true })
+              break
+            case 4: // loaded first resource
+              expect(all.loading).toBe(true)
+              expect(all.loaded).toBe(false)
+              expect(all.error).toBeNull()
+              expect(resources.user).toEqual({ ...defaultResource, loaded: true, data: user })
+              expect(resources.error).toEqual({ ...defaultResource, loading: true })
+              break
+            case 5: // loaded second resource (with error)
+              expect(all.loading).toBe(false)
+              expect(all.loaded).toBe(false)
+              expect(all.error).toBe('An Error')
+              expect(resources.user).toEqual({ ...defaultResource, loaded: true, data: user })
+              expect(resources.error).toEqual({ ...defaultResource, error: 'An Error' })
+              done()
+              break
+          }
+          return <div> Testing </div>
+        }}
+      />
+      </Provider>,
+    )
   })
 })
