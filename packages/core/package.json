@@ -1,6 +1,6 @@
 {
   "name": "@async-resource/core",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
