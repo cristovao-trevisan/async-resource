@@ -139,36 +139,65 @@ test('should call resource only once', () => {
   expect(source.mock.calls.length).toBe(1)
 })
 
-test('cache TTL should work', async (done) => {
+test('cache TTL should work', async () => {
   const source = jest.fn(async () => user)
+  storage.set('userResource', { data: user , timestamp: Date.now() - 6 })
   // max duration of 5 milliseconds
   resources.registerResource('user', {
     source,
     cache: { TTL: 5 },
   })
   const consumer = jest.fn()
-  resources.subscribe('user', consumer)
+  await resources.subscribe('user', consumer)
 
   await resources.consume('user')
+  expect(source.mock.calls.length).toBe(1)
+})
 
+test('TTL should work', (done) => {
+  let count = 0
+  const source = jest.fn(async () => {
+    count += 1
+    return { ...user, count }
+  })
+  // max duration of 5 milliseconds
+  resources.registerResource('user', {
+    source,
+    TTL: 10,
+  })
+  const consumer = jest.fn()
+  resources.subscribe('user', consumer)
+
+  resources.consume('user')
   setTimeout(
     () => {
       // consume should be called after TTL (5ms),
       // so after 9ms the consumer is called again (loading and loaded)
-      expect(source.mock.calls.length).toBe(2)
-      expect(consumer.mock.calls.length).toBe(6)
-      // try loading cache
-      expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
-      expect(consumer.mock.calls[1][0]).toEqual(defaultResource)
+      expect(source.mock.calls.length).toBe(3)
+      expect(consumer.mock.calls.length).toBe(7)
       // call source
-      expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
-      expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+      expect(consumer.mock.calls[0][0]).toEqual(defaultResource)
+      expect(consumer.mock.calls[1][0]).toEqual({ ...defaultResource, loading: true })
+      expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loaded: true, data: { ...user, count: 1 } })
       // call source after TTL
-      expect(consumer.mock.calls[4][0]).toEqual({ ...defaultResource, loading: true, loaded: true, data: user })
-      expect(consumer.mock.calls[5][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+      expect(consumer.mock.calls[3][0]).toEqual({
+        ...defaultResource,
+        loaded: true,
+        loading: true,
+        data: { ...user, count: 1 },
+      })
+      expect(consumer.mock.calls[4][0]).toEqual({ ...defaultResource, loaded: true, data: { ...user, count: 2 } })
+      // call source after TTL
+      expect(consumer.mock.calls[5][0]).toEqual({
+        ...defaultResource,
+        loaded: true,
+        loading: true,
+        data: { ...user, count: 2 },
+      })
+      expect(consumer.mock.calls[6][0]).toEqual({ ...defaultResource, loaded: true, data: { ...user, count: 3 } })
       done()
     },
-    8,
+    25,
   )
 })
 

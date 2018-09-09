@@ -37,6 +37,8 @@ export interface SourceOptions {
     /** Maximum data duration */
     TTL?: Number,
   },
+  /** Used for pooling */
+  TTL?: Number,
 }
 
 export interface Source extends SourceOptions {

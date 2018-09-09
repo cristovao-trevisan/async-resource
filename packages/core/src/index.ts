@@ -12,6 +12,8 @@ import {
 
 export * from './index.types'
 
+export const identifier = (id: string) => `${id}Resource`
+
 export const defaultResource: Resource = {
   cache: false,
   loading: false,
@@ -25,6 +27,7 @@ const resources: Map<string, Resource> = new Map()
 const producers: Map<string, Source> = new Map()
 const consumersMap: Map<string, Consumer[]> = new Map()
 const requests: Map<string, ConsumeOptions> = new Map()
+const timeouts: Map<string, Number> = new Map()
 // const paginatedResources: Map<string, PaginatedResource> = new Map()
 
 const updateResource = (id: string, resource: Resource) => {
@@ -35,19 +38,25 @@ const updateResource = (id: string, resource: Resource) => {
   // consume data
   const consumers = consumersMap.get(id)
   if (consumers) consumers.forEach(consume => consume(resource))
-  // cache result (if any)
   const producer = producers.get(id)!
-  if (!resource.cache && resource.loaded && producer.cache) {
-    const store = producer.cache.storage || storage
-    store.set(`${id}Resource`, { data: resource.data, timestamp: Date.now() })
+  // if resource just loaded
+  if (!resource.cache && resource.loaded) {
+    const uniqueId = identifier(id)
+    // cache result (if any)
+    if (producer.cache) {
+      const store = producer.cache.storage || storage
+      store.set(uniqueId, { data: resource.data, timestamp: Date.now() })
+    }
     // set TTL callback
-    if (producer.cache.TTL) {
-      setTimeout(
+    if (producer.TTL && !timeouts.has(uniqueId)) {
+      const timeout = setTimeout(
         () => {
           const options = requests.get(id) || {}
           consume(id, { ...options, reload: true })
+          timeouts.delete(uniqueId)
         },
-        producer.cache.TTL)
+        producer.TTL)
+      timeouts.set(uniqueId, timeout)
     }
   }
 }
@@ -60,12 +69,12 @@ const readCache = async (id: string, options: SourceOptions) => {
   updateResource(id, { ...defaultResource, loading: true, cache: true })
   const cache = options.cache!
   const store = cache.storage || storage
-  const storageItem: ResourceCache = await store.get(`${id}Resource`)
+  const storageItem: ResourceCache = await store.get(identifier(id))
   // cache logic
   if (storageItem) {
     const { data, timestamp } = storageItem
     const passedTime = Date.now() - timestamp
-    if (!cache.TTL || passedTime > options.cache!.TTL!) {
+    if (!cache.TTL || passedTime < options.cache!.TTL!) {
       updateResource(id, { ...defaultResource, data, loaded: true, cache: true })
       return true
     }
