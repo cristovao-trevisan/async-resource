@@ -37,7 +37,7 @@ class Resources extends Component<Props> {
   render() {
     const { render, resources, ids } = this.props
     const loaded = resources.reduce((acc, resource) => acc && resource.loaded, true)
-    const loading = !loaded && resources.some(({ loading }) => loading)
+    const loading = !loaded || resources.some(({ loading }) => loading)
     const error = resources.map(({ error }) => error).find(error => !!error) || null
 
     return render(
