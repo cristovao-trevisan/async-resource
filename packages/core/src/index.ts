@@ -39,7 +39,7 @@ const updateResource = (id: string, resource: Resource) => {
   const producer = producers.get(id)!
   if (!resource.cache && resource.loaded && producer.cache) {
     const store = producer.cache.storage || storage
-    store.set(`resource-${id}`, { resource, timestamp: Date.now() })
+    store.set(`${id}Resource`, { data: resource.data, timestamp: Date.now() })
     // set TTL callback
     if (producer.cache.TTL) {
       setTimeout(
@@ -60,7 +60,7 @@ const readCache = async (id: string, options: SourceOptions) => {
   updateResource(id, { ...defaultResource, loading: true, cache: true })
   const cache = options.cache!
   const store = cache.storage || storage
-  const storageItem: ResourceCache = await store.get(`resource-${id}`)
+  const storageItem: ResourceCache = await store.get(`${id}Resource`)
   // cache logic
   if (storageItem) {
     const { data, timestamp } = storageItem
@@ -80,9 +80,9 @@ export const registerResource = async (id: string, options: Source) => {
 
   if (options.cache) {
     const cacheHit = await readCache(id, options)
-    const consumeOptions = requests.get(id)
     // defaults to invalid cache
     // (which requests the data if consume was called)
+    const consumeOptions = requests.get(id)
     if (!cacheHit && consumeOptions) await consume(id, consumeOptions)
   }
 }

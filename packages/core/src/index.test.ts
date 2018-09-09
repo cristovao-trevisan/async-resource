@@ -42,7 +42,7 @@ test('basic error handling', async () => {
 
 test('should read cache', async () => {
   const message = 'I should throw'
-  storage.set('resource-user', { data: user , timestamp: Date.now() })
+  storage.set('userResource', { data: user , timestamp: Date.now() })
   const consumer = jest.fn()
   resources.subscribe('user', consumer)
 
@@ -111,7 +111,7 @@ test('should try to read cache, and call resource when it fails', async (done) =
 
   // await cache failure
   setTimeout(
-    () => {
+    async () => {
       // reading cache
       expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
       // nothing found
@@ -121,7 +121,7 @@ test('should try to read cache, and call resource when it fails', async (done) =
       expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
       // loaded
       expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
-
+      expect(await storage.get('userResource')).toMatchObject({ data: user })
       expect(consumer.mock.calls.length).toBe(4)
 
       done()
@@ -144,7 +144,7 @@ test('cache TTL should work', async (done) => {
   // max duration of 5 milliseconds
   resources.registerResource('user', {
     source,
-    cache: { TTL: 3 },
+    cache: { TTL: 5 },
   })
   const consumer = jest.fn()
   resources.subscribe('user', consumer)
@@ -168,7 +168,7 @@ test('cache TTL should work', async (done) => {
       expect(consumer.mock.calls[5][0]).toEqual({ ...defaultResource, loaded: true, data: user })
       done()
     },
-    5,
+    8,
   )
 })
 
