@@ -31,8 +31,6 @@ const timeouts: Map<string, Number> = new Map()
 // const paginatedResources: Map<string, PaginatedResource> = new Map()
 
 const updateResource = (id: string, resource: Resource) => {
-  // don't write cache over requested data
-  if (resources.get(id)!.loaded && resource.cache) return
   // update the state
   resources.set(id, resource)
   // consume data
@@ -46,17 +44,6 @@ const updateResource = (id: string, resource: Resource) => {
     if (producer.cache) {
       const store = producer.cache.storage || storage
       store.set(uniqueId, { data: resource.data, timestamp: Date.now() })
-    }
-    // set TTL callback
-    if (producer.TTL && !timeouts.has(uniqueId)) {
-      const timeout = setTimeout(
-        () => {
-          const options = requests.get(id) || {}
-          consume(id, { ...options, reload: true })
-          timeouts.delete(uniqueId)
-        },
-        producer.TTL)
-      timeouts.set(uniqueId, timeout)
     }
   }
 }
@@ -126,9 +113,21 @@ export const consume = async (
   const { reload = false, props } = consumeOptions
   const producer = producers.get(id)
   const resource = resources.get(id)!
+  if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
+  const uniqueId = identifier(id)
+
+  // set TTL callback
+  if (producer.TTL && !timeouts.has(uniqueId)) {
+    const timeout = setTimeout(
+      () => {
+        timeouts.delete(uniqueId)
+        consume(id, { ...consumeOptions, reload: true })
+      },
+      producer.TTL)
+    timeouts.set(uniqueId, timeout)
+  }
 
   // test request conditions
-  if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
   if (resource.loading) return // already loading
   if (resource.loaded && !reload) return // already loaded and should not reload
 
