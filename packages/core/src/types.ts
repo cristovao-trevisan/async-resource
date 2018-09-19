@@ -20,13 +20,21 @@ export interface Resource {
   readonly data: any
 }
 
+export interface NamespaceResource {
+  [namespace: string]: Resource
+}
+
 export interface ResourceCache { data: Resource, timestamp: number }
 
 export interface SourceFunctionProps {
   /** User given props */
-  props: any,
+  props: any
   /** Current resource value */
-  resource: Resource,
+  resource: Resource
+}
+export interface NamespacedSourceFunctionProps extends SourceFunctionProps {
+  namespace: string
+  resources: NamespaceResource
 }
 
 export interface SourceOptions {
@@ -38,29 +46,23 @@ export interface SourceOptions {
     TTL?: Number,
   },
   /** Used for pooling */
-  TTL?: Number,
+  TTL?: Number
 }
 
 export interface Source extends SourceOptions {
-  source: (options: SourceFunctionProps) => Promise<any>,
+  source: (options: SourceFunctionProps) => Promise<any>
   update?: (options: SourceFunctionProps) => Promise<any>
 }
 
-// export interface PaginatedSourceFunctionProps {
-//   /** User given props */
-//   props: any,
-//   /** Current resource value */
-//   resource: PaginatedResource,
-// }
-
-// export interface PaginatedSource extends SourceOptions {
-//   source: (options: PaginatedSourceFunctionProps) => Promise<any>,
-// }
+export interface NamespacedSource extends SourceOptions {
+  source: (options: NamespacedSourceFunctionProps) => Promise<any>
+}
 
 export interface ConsumeOptions {
   /** User given props */
-  props?: any,
-  reload?: Boolean,
+  props?: any
+  reload?: Boolean
 }
 
 export type Consumer = (resource: Resource) => void
+export type NamespaceConsumer = (resources: NamespaceResource) => void

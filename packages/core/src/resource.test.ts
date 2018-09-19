@@ -1,4 +1,4 @@
-import * as resources from './index'
+import * as resources from './resource'
 import storage from './storage'
 
 const { defaultResource } = resources
