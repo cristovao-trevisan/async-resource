@@ -3,11 +3,11 @@ import { GenericStorage } from './storage/types'
 // export interface PaginatedResource {
 //   readonly loading: Boolean
 //   readonly loaded: Boolean
-//   readonly length: Number
-//   readonly offset: Number
+//   readonly length: number
+//   readonly offset: number
 //   readonly full: Boolean
 //   readonly errors: string[]
-//   readonly data: Map<Number, any> // index -> data
+//   readonly data: Map<number, any> // index -> data
 // }
 
 export interface Resource {
@@ -43,10 +43,10 @@ export interface SourceOptions {
     /** Defaults to LocalStorage */
     storage?: GenericStorage,
     /** Maximum data duration */
-    TTL?: Number,
+    TTL?: number,
   },
   /** Used for pooling */
-  TTL?: Number
+  TTL?: number
 }
 
 export interface Source extends SourceOptions {

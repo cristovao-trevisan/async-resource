@@ -29,7 +29,7 @@ export const registerNamespacedResource = (
 const onResource = (id: string) => () => {
   const consumers = consumersMap.get(id)!
   const data = getResourceData(id)
-  consumers.forEach(consume => consume(data))
+  consumers.forEach(consumer => consumer(data))
 }
 
 const getResourceData = (id: string): NamespaceResource => {
@@ -71,7 +71,7 @@ export const consumeNamespace = async (
     namespacedSubscriptions.set(id, subscriptions)
   }
 
-  await consume(namespaceId, options)
+  return consume(namespaceId, options)
 }
 
 export const unsubscribeFromNamespace = (id: string, consumer: NamespaceConsumer) => {

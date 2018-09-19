@@ -23,8 +23,8 @@ const resources: Map<string, Resource> = new Map()
 const producers: Map<string, Source> = new Map()
 const consumersMap: Map<string, Consumer[]> = new Map()
 const requests: Map<string, ConsumeOptions> = new Map()
-const timeouts: Map<string, Number> = new Map()
-// const paginatedResources: Map<string, PaginatedResource> = new Map()
+const timeouts: Map<string, number> = new Map()
+const usageCounters: Map<string, number> = new Map()
 
 const updateResource = (id: string, resource: Resource) => {
   // update the state
@@ -96,9 +96,14 @@ export const unsubscribe = (id: string, consumer: Consumer) => {
   consumersMap.set(id, consumers)
 }
 
+const voidFunction = () => {}
+
+/** Returns a function to stop consuming */
 export const consume = async (
   id: string,
   consumeOptions: ConsumeOptions = {},
+  /** Do not use this directly, true for internal polling control */
+  pooling = false,
 ) => {
   // set as requested
   requests.set(id, consumeOptions)
@@ -109,20 +114,25 @@ export const consume = async (
   if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
   const uniqueId = identifier(id)
 
+  // increase usage counter (to do polling only when needed)
+  if (!pooling) usageCounters.set(uniqueId, (usageCounters.get(uniqueId) || 0) + 1)
+
   // set TTL callback
   if (producer.TTL && !timeouts.has(uniqueId)) {
     const timeout = setTimeout(
       () => {
         timeouts.delete(uniqueId)
-        consume(id, { ...consumeOptions, reload: true })
+        if (usageCounters.get(uniqueId) === 0) return // only consume when needed
+        consume(id, consumeOptions, true) // do consume
       },
       producer.TTL)
     timeouts.set(uniqueId, timeout)
   }
 
   // test request conditions
-  if (resource.loading) return // already loading
-  if (resource.loaded && !reload) return // already loaded and should not reload
+  if (resource.loading) return voidFunction // already loading
+  // already loaded, should not reload and not a pooling call
+  if (resource.loaded && !reload && !pooling) return voidFunction
 
   try {
     // set loading
@@ -135,6 +145,9 @@ export const consume = async (
     // failed, set error
     updateResource(id, { ...defaultResource, error: e.message })
   }
+
+  // decrease usage counter
+  return () => { usageCounters.set(uniqueId, usageCounters.get(uniqueId)! - 1) }
 }
 
 export const update = async (
