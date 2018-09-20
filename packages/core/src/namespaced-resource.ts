@@ -9,7 +9,6 @@ import {
   ConsumeOptions,
   NamespaceConsumer,
   NamespaceResource,
-  NamespacedSourceFunctionProps,
 } from './types'
 
 const namespaceIdentifier = (id: string, namespace: string) => `${id}/${namespace}`
