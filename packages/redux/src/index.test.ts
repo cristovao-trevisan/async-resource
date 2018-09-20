@@ -11,13 +11,21 @@ import connectResource, {
 import {
   defaultResource,
   consume,
+  consumeNamespace,
 } from '@async-resource/core'
 
 let store: Store<any> = createDynamicStore()
-let { registerResource: registerDynamicResource } = connectResource(store)
+let {
+  registerResource: registerDynamicResource,
+  registerNamespacedResource: registerDynamicNamespacedResource,
+} = connectResource(store)
+
 beforeEach(() => {
   store = createDynamicStore();
-  ({ registerResource: registerDynamicResource } = connectResource(store))
+  ({
+    registerResource: registerDynamicResource,
+    registerNamespacedResource: registerDynamicNamespacedResource,
+  } = connectResource(store))
 })
 
 const user = { firstName: 'Bob', lastName: 'Sponge' }
@@ -109,4 +117,23 @@ test('should work without redux-dynamic-reducer', async () => {
     ...loadedResource,
     data: 'information',
   })
+})
+
+const email = 'bob@sponge.com'
+test('basic namespaced functionality', async () => {
+  const states = []
+  store.subscribe(() => states.push(store.getState().userResource))
+  registerDynamicNamespacedResource('user', {
+    source: async () => user,
+  })
+
+  expect(store.getState().userResource).toEqual({})
+  await consumeNamespace('user', email)
+  expect(store.getState().userResource).toEqual({ [email]: loadedResource })
+
+  expect(states.length).toBe(4)
+  expect(states[0]).toEqual({}) // default
+  expect(states[1]).toEqual({ [email]: defaultResource }) // registering
+  expect(states[2]).toEqual({ [email]: loadingResource })
+  expect(states[3]).toEqual({ [email]: loadedResource })
 })

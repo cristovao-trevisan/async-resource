@@ -20,7 +20,7 @@
   "author": "Cristóvão Trevisan",
   "license": "MIT",
   "devDependencies": {
-    "@async-resource/core": "^0.0.2",
+    "@async-resource/core": "^0.1.0",
     "@types/jest": "^23.3.1",
     "@types/react-redux": "^6.0.6",
     "jest": "^23.5.0",
@@ -32,7 +32,7 @@
     "typescript": "^3.0.1"
   },
   "peerDependencies": {
-    "@async-resource/core": "^0.0.2",
+    "@async-resource/core": "^0.1.0",
     "redux": "^4.0.0"
   }
 }
