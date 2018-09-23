@@ -31,7 +31,7 @@ class Resources extends Component<Props> {
 
   componentWillMount() {
     const { ids, options } = this.props
-    setTimeout(() => ids.forEach(id => consume(id, options || {})))
+    setTimeout(() => ids.forEach(id => consume(id, options![id] || {})))
   }
 
   render() {
