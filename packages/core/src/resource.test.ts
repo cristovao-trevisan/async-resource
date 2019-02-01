@@ -292,4 +292,6 @@ test('should clear internal variable and storage item', async () => {
 
   expect(resources.get('user')).toBeUndefined()
   expect(await storage.get(resources.identifier('user'))).toBeNull()
+  const lastCall = consumer.mock.calls.length - 1
+  expect(consumer.mock.calls[lastCall][0]).toEqual(defaultResource) // should clear in consumers
 })
