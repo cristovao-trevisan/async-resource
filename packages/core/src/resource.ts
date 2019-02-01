@@ -180,6 +180,7 @@ export const update = async (
 export const get = (id: string) => resources.get(id)
 
 export const clear = () => {
+  resources.forEach((resource, id) => storage.remove(identifier(id)))
   resources.clear()
   producers.clear()
   consumersMap.clear()

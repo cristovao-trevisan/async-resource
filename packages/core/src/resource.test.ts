@@ -274,3 +274,22 @@ describe('#update', () => {
     expect(consumer.mock.calls[4][0]).toEqual(loaded)
   })
 })
+
+test('should clear internal variable and storage item', async () => {
+  await resources.registerResource('user', {
+    source: async () => user,
+    cache: {},
+  })
+
+  const consumer = jest.fn()
+  resources.subscribe('user', consumer)
+
+  await resources.consume('user')
+
+  expect(resources.get('user')).toMatchObject({ data: user })
+  expect(await storage.get(resources.identifier('user'))).toMatchObject({ data: user })
+  resources.clear()
+
+  expect(resources.get('user')).toBeUndefined()
+  expect(await storage.get(resources.identifier('user'))).toBeNull()
+})
