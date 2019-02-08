@@ -185,8 +185,12 @@ export const clear = () => {
     const consumers = consumersMap.get(id)
     if (consumers) consumers.forEach(consumer => consumer(defaultResource))
   })
+  requests.clear()
+}
+
+export const purge = () => {
+  clear()
   resources.clear()
   producers.clear()
   consumersMap.clear()
-  requests.clear()
 }

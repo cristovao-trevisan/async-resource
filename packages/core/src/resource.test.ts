@@ -3,7 +3,7 @@ import storage from './storage'
 
 const { defaultResource } = resources
 beforeEach(() => {
-  resources.clear()
+  resources.purge()
   storage.clear()
 })
 
@@ -144,12 +144,10 @@ test('cache TTL should work', async () => {
   const source = jest.fn(async () => user)
   storage.set('userResource', { data: user , timestamp: Date.now() - 6 })
   // max duration of 5 milliseconds
-  resources.registerResource('user', {
+  await resources.registerResource('user', {
     source,
     cache: { TTL: 3 },
   })
-  const consumer = jest.fn()
-  await resources.subscribe('user', consumer)
 
   await resources.consume('user')
   expect(source.mock.calls.length).toBe(1)
@@ -162,10 +160,10 @@ test('TTL should work', async (done) => {
     return { ...user, count }
   })
   await storage.set('userResource', { data: user , timestamp: Date.now() })
-  // max duration of 5 milliseconds
+
   const consumer = jest.fn()
   resources.subscribe('user', consumer)
-  resources.registerResource('user', {
+  await resources.registerResource('user', {
     source,
     TTL: 20,
     cache: {},
@@ -275,23 +273,47 @@ describe('#update', () => {
   })
 })
 
-test('should clear internal variable and storage item', async () => {
-  await resources.registerResource('user', {
-    source: async () => user,
-    cache: {},
+describe('clear', () => {
+  test('should clear internal variable and storage item', async () => {
+    await resources.registerResource('user', {
+      source: async () => user,
+      cache: {},
+    })
+
+    const consumer = jest.fn()
+    resources.subscribe('user', consumer)
+
+    await resources.consume('user')
+
+    expect(resources.get('user')).toMatchObject({ data: user })
+    expect(await storage.get(resources.identifier('user'))).toMatchObject({ data: user })
+    resources.clear()
+
+    expect(await storage.get(resources.identifier('user'))).toBeNull()
+    const lastCall = consumer.mock.calls.length - 1
+    expect(consumer.mock.calls[lastCall][0]).toEqual(defaultResource) // should clear in consumers
   })
+})
 
-  const consumer = jest.fn()
-  resources.subscribe('user', consumer)
+describe('purge', () => {
+  test('should clear everything', async () => {
+    await resources.registerResource('user', {
+      source: async () => user,
+      cache: {},
+    })
 
-  await resources.consume('user')
+    const consumer = jest.fn()
+    resources.subscribe('user', consumer)
 
-  expect(resources.get('user')).toMatchObject({ data: user })
-  expect(await storage.get(resources.identifier('user'))).toMatchObject({ data: user })
-  resources.clear()
+    await resources.consume('user')
 
-  expect(resources.get('user')).toBeUndefined()
-  expect(await storage.get(resources.identifier('user'))).toBeNull()
-  const lastCall = consumer.mock.calls.length - 1
-  expect(consumer.mock.calls[lastCall][0]).toEqual(defaultResource) // should clear in consumers
+    expect(resources.get('user')).toMatchObject({ data: user })
+    expect(await storage.get(resources.identifier('user'))).toMatchObject({ data: user })
+    resources.purge()
+
+    expect(resources.get('user')).toBeUndefined()
+    expect(await storage.get(resources.identifier('user'))).toBeNull()
+    const lastCall = consumer.mock.calls.length - 1
+    expect(consumer.mock.calls[lastCall][0]).toEqual(defaultResource) // should clear in consumers
+  })
 })
