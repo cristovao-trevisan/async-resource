@@ -182,6 +182,7 @@ export const get = (id: string) => resources.get(id)
 export const clear = () => {
   resources.forEach((resource, id) => {
     storage.remove(identifier(id))
+    resources.set(id, defaultResource)
     const consumers = consumersMap.get(id)
     if (consumers) consumers.forEach(consumer => consumer(defaultResource))
   })

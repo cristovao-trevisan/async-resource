@@ -289,6 +289,7 @@ describe('clear', () => {
     expect(await storage.get(resources.identifier('user'))).toMatchObject({ data: user })
     resources.clear()
 
+    expect(resources.get('user')).toEqual(defaultResource)
     expect(await storage.get(resources.identifier('user'))).toBeNull()
     const lastCall = consumer.mock.calls.length - 1
     expect(consumer.mock.calls[lastCall][0]).toEqual(defaultResource) // should clear in consumers
