@@ -1,13 +1,14 @@
 {
   "name": "@async-resource/redux",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
+  "module": "dist/index.es.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "pretest": "tslint --project tsconfig.json",
     "test": "jest --verbose --silent --coverage",
-    "build": "rm -rf dist && tsc",
+    "build": "rm -rf dist && rollup -c",
     "prepublish": "yarn build"
   },
   "keywords": [
@@ -20,12 +21,14 @@
   "author": "Cristóvão Trevisan",
   "license": "MIT",
   "devDependencies": {
-    "@async-resource/core": "^0.1.0",
+    "@async-resource/core": "^0.1.7",
     "@types/jest": "^23.3.1",
     "@types/react-redux": "^6.0.6",
     "jest": "^23.5.0",
     "redux": "^4.0.0",
     "redux-dynamic-reducer": "^2.0.2",
+    "rollup": "^1.1.2",
+    "rollup-plugin-typescript2": "^0.19.2",
     "ts-jest": "^23.1.4",
     "tslint": "^5.11.0",
     "tslint-config-airbnb": "^5.10.0",
