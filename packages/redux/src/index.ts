@@ -26,8 +26,7 @@ export const reducerKey = (id: string) => `${id}Resource`
 
 export const consumeAction = (id: string, props?: ConsumeOptions) => ({ props, type: consumeKey(id) })
 
-type ResourceReducer = Reducer<Resource, AnyAction>
-type NamespacedResourceReducer= Reducer<NamespaceResource, AnyAction>
+type ResourceReducer = Reducer<Resource | NamespaceResource, AnyAction>
 
 interface NestableReducersMapObject {
   [key: string]: (NestableReducersMapObject | Reducer<any>)
@@ -61,7 +60,7 @@ const buildResourceReducer = (id: string): ResourceReducer => {
   }
 }
 
-const buildNamespacedResourceReducer = (id: string): NamespacedResourceReducer => (namespacedResource = {}, action) => {
+const buildNamespacedResourceReducer = (id: string): ResourceReducer => (namespacedResource = {}, action) => {
   const consumers: { [key: string]: Function  } = {}
 
   const update = updateKey(id)
@@ -107,7 +106,7 @@ export default (store: DynamicStore) => ({
   },
 })
 
-interface ResourceMapObject { [key: string]: ResourceReducer | NamespacedResourceReducer }
+interface ResourceMapObject { [key: string]: ResourceReducer | ResourceReducer }
 export let reducers: ResourceMapObject = {}
 export const clear = () => { reducers = {} }
 
