@@ -23,7 +23,7 @@ const resources: Map<string, Resource> = new Map()
 const producers: Map<string, Source> = new Map()
 const consumersMap: Map<string, Consumer[]> = new Map()
 const requests: Map<string, ConsumeOptions> = new Map()
-const timeouts: Map<string, number> = new Map()
+const timeouts: Map<string, NodeJS.Timeout> = new Map()
 const usageCounters: Map<string, number> = new Map()
 
 const updateResource = (id: string, resource: Resource) => {
@@ -96,8 +96,6 @@ export const unsubscribe = (id: string, consumer: Consumer) => {
   consumersMap.set(id, consumers)
 }
 
-const voidFunction = () => {}
-
 /** Returns a function to stop consuming */
 export const consume = async (
   id: string,
@@ -114,25 +112,35 @@ export const consume = async (
   if (!producer || !resource) throw new Error(`Resource not registered: ${id}`)
   const uniqueId = identifier(id)
 
-  // increase usage counter (to do polling only when needed)
-  if (!pooling) usageCounters.set(uniqueId, (usageCounters.get(uniqueId) || 0) + 1)
+  // create TTL subscription
+  let unsubscribe = () => {}
+  if (!pooling) {
+    unsubscribe = () => {
+      usageCounters.set(uniqueId, usageCounters.get(uniqueId)! - 1)
+      const timeout = timeouts.get(uniqueId)
+      if (usageCounters.get(uniqueId) === 0 && timeout) {
+        clearTimeout(timeout)
+        timeouts.delete(uniqueId)
+      }
+    }
+    usageCounters.set(uniqueId, (usageCounters.get(uniqueId) || 0) + 1)
+  }
 
   // set TTL callback
   if (producer.TTL && !timeouts.has(uniqueId)) {
     const timeout = setTimeout(
       () => {
         timeouts.delete(uniqueId)
-        if (usageCounters.get(uniqueId) === 0) return // only consume when needed
-        consume(id, consumeOptions, true) // do consume
+        if (usageCounters.get(uniqueId) !== 0) consume(id, consumeOptions, true)
       },
       producer.TTL)
     timeouts.set(uniqueId, timeout)
   }
 
   // test request conditions
-  if (resource.loading) return voidFunction // already loading
+  if (resource.loading) return unsubscribe // already loading
   // already loaded, should not reload and not a pooling call
-  if (resource.loaded && !reload && !pooling) return voidFunction
+  if (resource.loaded && !reload && !pooling) return unsubscribe
 
   try {
     // set loading
@@ -140,14 +148,14 @@ export const consume = async (
     // request resource
     const data = await producer.source({ props, resource })
     // got it
-    updateResource(id, { ...defaultResource, data, loaded: true, updating: false })
+    updateResource(id, { ...defaultResource, data, cache: false, loaded: true, updating: false })
   } catch (e) {
     // failed, set error
     updateResource(id, { ...defaultResource, error: e.message })
   }
 
   // decrease usage counter
-  return () => { usageCounters.set(uniqueId, usageCounters.get(uniqueId)! - 1) }
+  return unsubscribe
 }
 
 export const update = async (
@@ -187,6 +195,9 @@ export const clear = () => {
     if (consumers) consumers.forEach(consumer => consumer(defaultResource))
   })
   requests.clear()
+  timeouts.forEach(timeout => clearTimeout(timeout))
+  timeouts.clear()
+  usageCounters.clear()
 }
 
 export const purge = () => {

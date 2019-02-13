@@ -1,13 +1,14 @@
 import * as resources from './resource'
 import storage from './storage'
+import { wait } from './helpers'
 
 const { defaultResource } = resources
+const user = { name: 'Bob  ', surname: 'Sponge' }
 beforeEach(() => {
   resources.purge()
   storage.clear()
 })
 
-const user = { name: 'Bob  ', surname: 'Sponge' }
 test('basic functionality', async () => {
   resources.registerResource('user', {
     source: async () => user,
@@ -40,6 +41,9 @@ test('basic error handling', async () => {
   expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, error: message })
 })
 
+test('#consume should throw if resource is not found', () =>
+  expect(resources.consume('user')).rejects.toBeTruthy())
+
 test('should read cache', async () => {
   const message = 'I should throw'
   storage.set('userResource', { data: user , timestamp: Date.now() })
@@ -58,16 +62,16 @@ test('should read cache', async () => {
     .toEqual({ ...defaultResource, loaded: true, cache: true, data: user })
 })
 
-test('unsubscribe should work', async () => {
+test('listener unsubscribe should work', async () => {
   resources.registerResource('user', {
     source: async () => user,
   })
 
   const consumer = jest.fn()
-  resources.subscribe('user', consumer)
+  const unsubscribe = resources.subscribe('user', consumer)
 
   expect(consumer.mock.calls.length).toBe(1)
-  resources.unsubscribe('user', consumer)
+  unsubscribe()
   await resources.consume('user')
   expect(consumer.mock.calls.length).toBe(1)
 })
@@ -95,41 +99,30 @@ test('should work for multiple consumers, with unsubscribe and reload', async ()
   expect(consumer3.mock.calls.length).toBe(3)
 })
 
-test('should try to read cache, and call resource when it fails', async (done) => {
-  const get = storage.get
+test('should try to read cache, and call resource when it fails', async () => {
   const consumer = jest.fn()
   const source = jest.fn(async () => user)
 
-  storage.get = () => null
-
+  resources.subscribe('user', consumer)
   resources.registerResource('user', {
     source,
     cache: {},
   })
-  resources.subscribe('user', consumer)
 
-  await resources.consume('user')
+  resources.consume('user')
+  await wait(1) // wait cache read
 
-  // await cache failure
-  setTimeout(
-    async () => {
-      // reading cache
-      expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
-      // nothing found
-      expect(consumer.mock.calls[1][0]).toEqual(defaultResource)
-      // call source
-      expect(source.mock.calls.length).toBe(1)
-      expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
-      // loaded
-      expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
-      expect(await storage.get('userResource')).toMatchObject({ data: user })
-      expect(consumer.mock.calls.length).toBe(4)
-
-      done()
-    },
-    1)
-
-  storage.get = get
+  // reading cache
+  expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
+  // nothing found
+  expect(consumer.mock.calls[1][0]).toEqual(defaultResource)
+  // call source
+  expect(source.mock.calls.length).toBe(1)
+  expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loading: true })
+  // loaded
+  expect(consumer.mock.calls[3][0]).toEqual({ ...defaultResource, loaded: true, data: user })
+  expect(await storage.get('userResource')).toMatchObject({ data: user })
+  expect(consumer.mock.calls.length).toBe(4)
 })
 
 test('should call resource only once', () => {
@@ -151,126 +144,6 @@ test('cache TTL should work', async () => {
 
   await resources.consume('user')
   expect(source.mock.calls.length).toBe(1)
-})
-
-test('TTL should work', async (done) => {
-  let count = 0
-  const source = jest.fn(async () => {
-    count += 1
-    return { ...user, count }
-  })
-  await storage.set('userResource', { data: user , timestamp: Date.now() })
-
-  const consumer = jest.fn()
-  resources.subscribe('user', consumer)
-  await resources.registerResource('user', {
-    source,
-    TTL: 20,
-    cache: {},
-  })
-
-  await resources.consume('user')
-  expect(source.mock.calls.length).toBe(0)
-  setTimeout(
-    () => {
-      expect(source.mock.calls.length).toBe(2)
-      expect(consumer.mock.calls.length).toBe(6)
-      // load from cache
-      expect(consumer.mock.calls[0][0]).toEqual({ ...defaultResource, cache: true, loading: true })
-      expect(consumer.mock.calls[1][0]).toEqual({ ...defaultResource, cache: true, loaded: true, data: user })
-      // call source after TTL
-      expect(consumer.mock.calls[2][0]).toEqual({
-        ...defaultResource,
-        cache: true,
-        loaded: true,
-        loading: true,
-        data: user,
-      })
-      expect(consumer.mock.calls[3][0]).toEqual({
-        ...defaultResource,
-        loaded: true,
-        loading: false,
-        data: { ...user, count: 1 },
-      })
-      // call source again TTL
-      expect(consumer.mock.calls[4][0]).toEqual({
-        ...defaultResource,
-        loaded: true,
-        loading: true,
-        data: { ...user, count: 1 },
-      })
-      expect(consumer.mock.calls[5][0]).toEqual({
-        ...defaultResource,
-        loaded: true,
-        loading: false,
-        data: { ...user, count: 2 },
-      })
-      done()
-    },
-    50,
-  )
-})
-
-describe('#update', () => {
-  test('should work', async () => {
-    const update = jest.fn(async ({ props, resource: { data } }) => ({ ...data, ...props }))
-    resources.registerResource('user', {
-      update,
-      source: async () => user,
-    })
-
-    const consumer = jest.fn()
-    resources.subscribe('user', consumer)
-
-    expect(consumer.mock.calls.length).toBe(1)
-    expect(consumer.mock.calls[0][0]).toEqual(defaultResource)
-
-    await resources.consume('user')
-    // loading
-    expect(consumer.mock.calls[1][0]).toEqual({ ...defaultResource, loading: true })
-    // data
-    expect(consumer.mock.calls[2][0]).toEqual({ ...defaultResource, loaded: true, data: user })
-
-    await resources.update('user', { name: 'John' })
-    expect(update.mock.calls[0][0]).toMatchObject({ props: { name: 'John' } })
-    // loading
-    expect(consumer.mock.calls[3][0]).toEqual({
-      ...defaultResource,
-      loaded: true,
-      updating: true,
-      data: user,
-    })
-    // data
-    expect(consumer.mock.calls[4][0]).toEqual({
-      ...defaultResource,
-      loaded: true,
-      data: { name: 'John', surname: 'Sponge' },
-    })
-  })
-
-  test('with error', async () => {
-    resources.registerResource('user', {
-      source: async () => user,
-      update: async () => { throw new Error('Could not update') },
-    })
-
-    const consumer = jest.fn()
-    resources.subscribe('user', consumer)
-
-    await resources.consume('user')
-    await resources.update('user', { name: 'John' }).catch(() => null)
-    const loaded = { ...defaultResource, loaded: true, data: user }
-    expect(consumer.mock.calls[2][0]).toEqual(loaded)
-    // loading
-    expect(consumer.mock.calls[3][0]).toEqual({
-      ...defaultResource,
-      loaded: true,
-      updating: true,
-      data: user,
-    })
-    // return to loaded state
-    expect(consumer.mock.calls[4][0]).toEqual(loaded)
-  })
 })
 
 describe('clear', () => {
