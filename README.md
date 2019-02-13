@@ -183,3 +183,6 @@ const UserInfo = withResource('error', {
 - Retrying
 - Pagination
 - Vue Component with JSX: HOC and Render Props
+- Separate documentation for packages
+- Better documentation
+- Unify packages versions
