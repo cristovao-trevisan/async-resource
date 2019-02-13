@@ -1,6 +1,6 @@
 {
   "name": "@async-resource/redux",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "High-Level Resource Manager for Flux Architecure",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
