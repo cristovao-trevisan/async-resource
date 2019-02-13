@@ -2,3 +2,4 @@ node_modules
 coverage
 dist
 app
+.rpt2_cache

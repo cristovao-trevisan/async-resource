@@ -3,7 +3,6 @@
     /* Basic Options */
     "target": "es5",
     "lib": ["es2017", "es7", "es6", "dom"],
-    "module": "commonjs",
     "declaration": true,
     "sourceMap": true,
     "outDir": "./dist",

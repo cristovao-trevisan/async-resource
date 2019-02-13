@@ -3,7 +3,7 @@
     /* Basic Options */
     "target": "es5",
     "lib": ["es2017", "es7", "es6", "dom"],
-    "module": "commonjs",
+    "allowSyntheticDefaultImports": true,
     "declaration": true,
     "sourceMap": true,
     "outDir": "./dist",
