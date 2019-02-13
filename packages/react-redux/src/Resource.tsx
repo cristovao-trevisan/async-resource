@@ -19,10 +19,14 @@ interface Props {
 class Resource extends Component<Props> {
   static propTypes = HOC
 
+  unsubscribe = () => {}
   componentWillMount() {
     const { id, options } = this.props
-    setTimeout(() => consume(id, options || {}))
+    setTimeout(async () => {
+      this.unsubscribe = await consume(id, options || {})
+    })
   }
+  componentWillUnmount() { this.unsubscribe() }
 
   render() {
     const { render, resource } = this.props

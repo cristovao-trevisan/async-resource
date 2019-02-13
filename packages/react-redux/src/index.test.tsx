@@ -25,31 +25,35 @@ beforeEach(() => {
   applyResourceToStore(store)
 })
 
-test('render props should work', (done) => {
-  let count = 0
-  ReactTestRenderer.create(
-    <Provider store={store}>
-      <Resource id="user" render={(resource) => {
-        count += 1
-        switch (count) {
-          case 1:
-            expect(resource).toEqual({ ...defaultResource, loading: true })
-            break
-          case 2:
-            expect(resource).toEqual({ ...defaultResource, loading: true })
-            break
-          case 3:
-            expect(resource).toEqual({ ...defaultResource, loaded: true, data: user })
-            done()
-            break
-        }
-        if (resource.loading) return <div> Loading </div>
-        if (resource.loaded) return <div> Data: { resource.data.name } </div>
-        throw new Error('should not get here')
-      }}
-    />
-    </Provider>,
-  )
+// FIXME: add tests for unsubscription
+
+describe('render props', () => {
+  test('should work', (done) => {
+    let count = 0
+    ReactTestRenderer.create(
+      <Provider store={store}>
+        <Resource id="user" render={(resource) => {
+          count += 1
+          switch (count) {
+            case 1:
+              expect(resource).toEqual({ ...defaultResource, loading: true })
+              break
+            case 2:
+              expect(resource).toEqual({ ...defaultResource, loading: true })
+              break
+            case 3:
+              expect(resource).toEqual({ ...defaultResource, loaded: true, data: user })
+              done()
+              break
+          }
+          if (resource.loading) return <div> Loading </div>
+          if (resource.loaded) return <div> Data: { resource.data.name } </div>
+          throw new Error('should not get here')
+        }}
+      />
+      </Provider>,
+    )
+  })
 })
 
 describe('HOC', () => {

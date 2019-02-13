@@ -26,9 +26,13 @@ export default (
 ) => {
   if (!get(id)) throw new Error(`Resource "${id}" not registered`)
   class Resource extends Component<Props> {
+    unsubscribe = () => {}
     componentWillMount() {
-      setTimeout(() => consume(id, options || {}))
+      setTimeout(async () => {
+        this.unsubscribe = await consume(id, options || {})
+      })
     }
+    componentWillUnmount() { this.unsubscribe() }
 
     render() {
       const rawResource: ResourceType = this.props.resource

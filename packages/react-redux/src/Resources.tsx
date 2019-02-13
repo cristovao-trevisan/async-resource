@@ -29,9 +29,17 @@ class Resources extends Component<Props> {
     options: {},
   }
 
+  unsubscribes: (() => void)[] = []
   componentWillMount() {
     const { ids, options } = this.props
-    setTimeout(() => ids.forEach(id => consume(id, options![id] || {})))
+    setTimeout(() => ids.forEach(async id =>
+      this.unsubscribes.push(
+        await consume(id, options![id] || {}),
+      ),
+    ))
+  }
+  componentWillUnmount() {
+    this.unsubscribes.forEach(unsubscribe => unsubscribe())
   }
 
   render() {
