@@ -106,24 +106,41 @@ export default (store: DynamicStore) => ({
   },
 })
 
-interface ResourceMapObject { [key: string]: ResourceReducer | ResourceReducer }
+interface ResourceMapObject { [key: string]: ResourceReducer }
 export let reducers: ResourceMapObject = {}
-export const clear = () => { reducers = {} }
+let resourceReducers: ResourceMapObject = {}
+let namespacedReducers: ResourceMapObject = {}
+export const clear = () => {
+  reducers = {}
+  resourceReducers = {}
+  namespacedReducers = {}
+}
 
 export const registerResource = (id: string, options: Source) => {
-  reducers[reducerKey(id)] = buildResourceReducer(id)
+  const key = reducerKey(id)
+  const reducer = buildResourceReducer(id)
+  reducers[key] = reducer
+  resourceReducers[key] = reducer
   register(id, options)
 }
 
 export const registerNamespacedResource = (id: string, options: NamespacedSource) => {
-  reducers[reducerKey(id)] = buildNamespacedResourceReducer(id)
+  const key = reducerKey(id)
+  const reducer = buildNamespacedResourceReducer(id)
+  reducers[key] = reducer
+  namespacedReducers[key] = reducer
   registerNamespace(id, options)
 }
 
 export const applyResourceToStore = (store: Store) => {
-  Object.keys(reducers).forEach((reducerKey) => {
+  Object.keys(resourceReducers).forEach((reducerKey) => {
     const id = /(.*)Resource$/.exec(reducerKey)![1]
     subscribe(id, resource =>
+      store.dispatch({ resource, type: updateKey(id) }))
+  })
+  Object.keys(namespacedReducers).forEach((reducerKey) => {
+    const id = /(.*)Resource$/.exec(reducerKey)![1]
+    subscribeToNamespace(id, resource =>
       store.dispatch({ resource, type: updateKey(id) }))
   })
 }
