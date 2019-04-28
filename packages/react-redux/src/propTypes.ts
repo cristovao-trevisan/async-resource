@@ -10,7 +10,6 @@ const resource = PropTypes.shape({
 }).isRequired
 
 export const HOC =  {
-  resource,
   id: PropTypes.string.isRequired,
   render: PropTypes.func.isRequired,
   options: PropTypes.object,
@@ -18,7 +17,6 @@ export const HOC =  {
 
 export const HOC_LIST =  {
   ids: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
-  resources: PropTypes.arrayOf(resource).isRequired,
   render: PropTypes.func.isRequired,
   options: PropTypes.any,
 }

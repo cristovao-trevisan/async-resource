@@ -8,9 +8,10 @@ import {
   clear,
   reducers,
   registerResource,
+  registerNamespacedResource,
 } from '@async-resource/redux'
 
-import { Resource, Resources, withResource } from './index'
+import { Resource, Resources, withResource, NamespacedResource } from './index'
 
 let store: Store
 const user = { name: 'Bob' }
@@ -20,6 +21,7 @@ beforeEach(() => {
   clear()
   registerResource('user', { source: async () => user })
   registerResource('team', { source: async () => team })
+  registerNamespacedResource('events', { source: async () => 'event' })
   registerResource('error', { source: async () => { throw new Error('An Error') } })
   store = createStore(combineReducers(reducers))
   applyResourceToStore(store)
@@ -191,6 +193,36 @@ describe('render props with multiple resources', () => {
               break
           }
           return <div> Testing </div>
+        }}
+      />
+      </Provider>,
+    )
+  })
+})
+
+describe('namespaced resource', () => {
+  test('should work', (done) => {
+    let count = 0
+    ReactTestRenderer.create(
+      <Provider store={store}>
+        <NamespacedResource id="events" namespace="party" render={(namespace, resource) => {
+          count += 1
+          switch (count) {
+            case 1:
+            case 2:
+              expect(namespace).toEqual({ ...defaultResource, loading: true })
+              break
+            case 3:
+              expect(namespace).toEqual({ ...defaultResource, loading: true })
+              break
+            case 4:
+              expect(namespace).toEqual({ ...defaultResource, loaded: true, data: 'event' })
+              done()
+              break
+          }
+          if (namespace.loading) return <div> Loading </div>
+          if (namespace.loaded) return <div> Data: { resource.data } </div>
+          throw new Error('should not get here')
         }}
       />
       </Provider>,

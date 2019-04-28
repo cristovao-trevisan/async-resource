@@ -12,7 +12,7 @@ import { HOC } from './propTypes'
 interface Props {
   id: string
   render(resource: ResourceType): Component | JSX.Element | null
-  resource: any
+  resource?: any
   options?: ConsumeOptions | null
 }
 
