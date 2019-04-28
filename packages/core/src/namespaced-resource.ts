@@ -28,7 +28,7 @@ export const registerNamespacedResource = (
 const onResource = (id: string) => () => {
   const consumers = consumersMap.get(id)!
   const data = getResourceData(id)
-  consumers.forEach(consumer => consumer(data))
+  if (consumers) consumers.forEach(consumer => consumer(data))
 }
 
 const getResourceData = (id: string): NamespaceResource => {
