@@ -1,8 +1,11 @@
 # @async-resource
 
 ## Motivation
-When writing flux-like http stores it's common to repeat lots of boilerplate code to handle, loading, error, caching, parallel requisitions, etc.
-This project's objective is to provide a common language on how http flow behaves across an app, plus some very useful functionality, like:
+When writing flux-like http stores it's common to repeat
+lots of boilerplate code to handle loading, error, caching,
+parallel requisitions, etc.
+This project's objective is to provide a common language on
+how http flow behaves across an app, plus some very useful functionality, like:
 
 - Caching
 - TTL

@@ -37,7 +37,7 @@ const loadedResource = {
 }
 
 test('basic functionality', async () => {
-  const states = []
+  const states = [] as any[]
   store.subscribe(() => states.push(store.getState().userResource))
   registerDynamicResource('user', {
     source: async () => user,
@@ -65,7 +65,7 @@ test('basic functionality', async () => {
 })
 
 test('action trigger', (done) => {
-  const states = []
+  const states = [] as any[]
   store.subscribe(() => states.push(store.getState().userResource))
   registerDynamicResource('user', {
     source: async () => user,
@@ -121,7 +121,7 @@ test('should work without redux-dynamic-reducer', async () => {
 
 const email = 'bob@sponge.com'
 test('basic namespaced functionality', async () => {
-  const states = []
+  const states = [] as any[]
   store.subscribe(() => states.push(store.getState().userResource))
   registerDynamicNamespacedResource('user', {
     source: async () => user,
