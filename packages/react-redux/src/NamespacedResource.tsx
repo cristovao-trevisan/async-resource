@@ -30,6 +30,13 @@ class NamespacedResource extends Component<Props> {
     })
   }
   componentWillUnmount() { this.unsubscribe() }
+  async componentDidUpdate(prevProps: Props) {
+    const { id, namespace, options } = this.props
+    if (prevProps.namespace !== namespace) {
+      this.unsubscribe()
+      this.unsubscribe = await consumeNamespace(id, namespace, options || {})
+    }
+  }
 
   render() {
     const { render, resource, namespace } = this.props
