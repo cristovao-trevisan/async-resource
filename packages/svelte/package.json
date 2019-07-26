@@ -1,0 +1,39 @@
+{
+  "name": "@async-resource/svelte",
+  "version": "0.2.0",
+  "description": "High-Level Resource Manager for Svelte",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "pretest": "tslint --project tsconfig.json",
+    "test": "jest --verbose --silent --coverage",
+    "build": "rm -rf dist && rollup -c",
+    "prepublish": "yarn test && yarn build"
+  },
+  "keywords": [
+    "resource",
+    "manager",
+    "svelte",
+    "http",
+    "async"
+  ],
+  "author": "Cristóvão Trevisan",
+  "license": "MIT",
+  "devDependencies": {
+    "@async-resource/core": "^0.2.0",
+    "@types/jest": "^24.0.15",
+    "jest": "^24.8.0",
+    "rollup": "^1.1.2",
+    "rollup-plugin-typescript2": "^0.22.0",
+    "svelte": "^3.6.9",
+    "ts-jest": "^24.0.2",
+    "tslint": "^5.11.0",
+    "tslint-config-airbnb": "^5.10.0",
+    "typescript": "^3.0.1"
+  },
+  "peerDependencies": {
+    "@async-resource/core": "^0.2.0",
+    "svelte": "^3.6.8"
+  }
+}
