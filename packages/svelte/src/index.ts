@@ -25,7 +25,7 @@ export const registerResource = (id: string, source: Source) => {
   return id
 }
 
-export const useResource = (id: string, opts: ConsumeOptions) => {
+export const useResource = (id: string, opts?: ConsumeOptions) => {
   const source = sources.get(id)
   if (!source) throw new Error(`Resource '${id}' not registered`)
 
@@ -38,7 +38,10 @@ export const useResource = (id: string, opts: ConsumeOptions) => {
   })
   var unsubscribe = subscribe(id, store.set)
 
-  return store
+  return {
+    subscribe: store.subscribe,
+    consume: (opts?: ConsumeOptions) => consume(id, opts).then(unsub => unsub()),
+  }
 }
 
 const namespacedSources = new Map<string, NamespacedSource>()
