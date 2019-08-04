@@ -68,7 +68,8 @@ describe('NamespacedResource', () => {
     const id = registerNamespacedResource('test', {
       source: jest.fn(async ({ props, namespace }) => ({ ...props, namespace, test: true })),
     })
-    const store = useNamespacedResource(id, 'mario', { props: { username: 'Mario' } })
+    const store = useNamespacedResource(id)
+    store.setNamespace('mario', { props: { username: 'Mario' } })
 
     let count = 0
     function checkResults(res: NamespacedResourceStoreValue) {
@@ -89,6 +90,24 @@ describe('NamespacedResource', () => {
             loaded: true,
             data: { username: 'Mario', namespace: 'mario', test: true },
           })
+          store.setNamespace('luigi', { props: { username: 'Luigi' } })
+          break
+        }
+        case 5: {
+          expect(res.resources.luigi).toStrictEqual(defaultResource)
+          break
+        }
+        case 6: {
+          expect(res.resources.luigi).toStrictEqual({ ...defaultResource, loading: true })
+          break
+        }
+        case 7: {
+          expect(res.resources.luigi).toStrictEqual(res.resource)
+          expect(res.resource).toStrictEqual({
+            ...defaultResource,
+            loaded: true,
+            data: { username: 'Luigi', namespace: 'luigi', test: true },
+          })
           done()
           break
         }
@@ -102,12 +121,14 @@ describe('NamespacedResource', () => {
     const source = jest.fn(async () => ({ test: true }))
     const id = registerNamespacedResource('test', { source })
 
-    const store = useNamespacedResource(id, 'mario', { props: { username: 'Mario' } })
+    const store = useNamespacedResource(id)
+    store.setNamespace('mario', { props: { username: 'Mario' } })
     const subscription = jest.fn()
     const unsubscribe = store.subscribe(subscription)
     await wait(5)
     expect(source.mock.calls.length).toBe(1)
     const calls = subscription.mock.calls.length
+
     // should not throw because of store is destroyed
     unsubscribe()
     await consumeNamespace('test', 'mario', { reload: true })
@@ -116,7 +137,6 @@ describe('NamespacedResource', () => {
   })
 
   test('should throw if resource is not registered', () => {
-    expect(() => useNamespacedResource('test', 'mario', {}))
-      .toThrow("Namespaced resource 'test' not registered")
+    expect(() => useNamespacedResource('test')).toThrow("Namespaced resource 'test' not registered")
   })
 })

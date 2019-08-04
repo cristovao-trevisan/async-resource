@@ -53,23 +53,32 @@ export interface NamespacedResourceStoreValue {
   resource: Resource
   resources: NamespaceResource
 }
-export const useNamespacedResource = (id: string, namespace: string, opts: ConsumeOptions) => {
+export const useNamespacedResource = (id: string) => {
   const source = namespacedSources.get(id)
   if (!source) throw new Error(`Namespaced resource '${id}' not registered`)
 
-  const store = writable<NamespacedResourceStoreValue>({ resource: defaultResource, resources: {} }, () => {
-    const unsubscribePromise = consumeNamespace(id, namespace, opts)
-    return () => {
-      unsubscribe()
-      unsubscribePromise.then(uns => uns())
-    }
-  })
-  var unsubscribe = subscribeToNamespace(id, (resources) => {
-    const resource = resources[namespace] || defaultResource
-    store.set({ resource, resources })
-  })
+  let unsubscribe = () => {}
+  const initialState = { resource: defaultResource, resources: {} }
+  const { set, subscribe } = writable<NamespacedResourceStoreValue>(initialState, () => unsubscribe)
 
-  return store
+  const setNamespace = (namespace: string, opts?: ConsumeOptions) => {
+    unsubscribe()
+    const unsubs1 = subscribeToNamespace(id, (resources) => {
+      const resource = resources[namespace] || defaultResource
+      set({ resource, resources })
+    })
+    const unsubsPromise = consumeNamespace(id, namespace, opts)
+
+    unsubscribe = () => {
+      unsubs1()
+      unsubsPromise.then(unsubs => unsubs())
+    }
+  }
+
+  return {
+    subscribe,
+    setNamespace,
+  }
 }
 
 export const clear = () => {
