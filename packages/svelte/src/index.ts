@@ -61,13 +61,14 @@ export const useNamespacedResource = (id: string) => {
   if (!source) throw new Error(`Namespaced resource '${id}' not registered`)
 
   let unsubscribe = () => {}
-  const initialState = { resource: defaultResource, resources: {} }
+  const initialState = { resource: { ...defaultResource, loading: true }, resources: {} }
   const { set, subscribe } = writable<NamespacedResourceStoreValue>(initialState, () => unsubscribe)
 
   const setNamespace = (namespace: string, opts?: ConsumeOptions) => {
     unsubscribe()
     const unsubs1 = subscribeToNamespace(id, (resources) => {
-      const resource = resources[namespace] || defaultResource
+      const resource = { ...(resources[namespace] || defaultResource) }
+      resource.loading = resource.loading || !resource.loaded
       set({ resource, resources })
     })
     const unsubsPromise = consumeNamespace(id, namespace, opts)

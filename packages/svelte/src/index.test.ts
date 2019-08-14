@@ -75,10 +75,7 @@ describe('NamespacedResource', () => {
     function checkResults(res: NamespacedResourceStoreValue) {
       switch (count) {
         case 0:
-        case 1: {
-          expect(res.resource).toStrictEqual(defaultResource)
-          break
-        }
+        case 1:
         case 2: {
           expect(res.resource).toStrictEqual({ ...defaultResource, loading: true })
           break
